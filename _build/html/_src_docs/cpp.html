@@ -1,0 +1,362 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Solution using C++ &#8212; RK4Test 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Solution using Cython" href="cython.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="solution-using-c">
+<h1>Solution using C++<a class="headerlink" href="#solution-using-c" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="eom-function">
+<h2>1. EOM Function<a class="headerlink" href="#eom-function" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">//******************************************************************************</span>
+
+<span class="kt">double</span> <span class="o">*</span> <span class="nf">eom</span><span class="p">(</span><span class="kt">double</span> <span class="n">t</span><span class="p">,</span> <span class="kt">double</span> <span class="n">x</span><span class="p">[])</span> <span class="p">{</span>
+
+<span class="c1">//******************************************************************************</span>
+<span class="c1">//</span>
+<span class="c1">//  Author:</span>
+<span class="c1">//</span>
+<span class="c1">//    Kshitij Mall</span>
+<span class="c1">//</span>
+<span class="c1">//  Modified:</span>
+<span class="c1">//</span>
+<span class="c1">//    18 February 2019</span>
+<span class="c1">//</span>
+<span class="c1">//  Purpose:</span>
+<span class="c1">//</span>
+<span class="c1">//    eom is the function file to obtain the derivative vector at a given time.</span>
+<span class="c1">//</span>
+<span class="c1">//  Inputs:</span>
+<span class="c1">//</span>
+<span class="c1">//    t: Time at which derivative needs to be evaluated</span>
+<span class="c1">//    x[]: starting state values for h, v, and fpa at the input time</span>
+<span class="c1">//</span>
+<span class="c1">//  Output:</span>
+<span class="c1">//</span>
+<span class="c1">//    xdot: Vector output with derivatives for each of the three input states</span>
+<span class="c1">//</span>
+<span class="c1">//******************************************************************************</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">g</span> <span class="o">=</span> <span class="mf">9.80665</span><span class="p">;</span> <span class="c1">// Acceleration due to gravity, m/s^2</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">re</span> <span class="o">=</span> <span class="mf">6378000.0</span><span class="p">;</span> <span class="c1">// Radius of Earth, m</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">B</span> <span class="o">=</span> <span class="mf">157.0</span><span class="p">;</span> <span class="c1">// Ballistic coefficient, kg/m^2</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">rho0</span> <span class="o">=</span> <span class="mf">1.225</span><span class="p">;</span> <span class="c1">// Surface atmospheric density, kg/m^3</span>
+    <span class="k">const</span> <span class="kt">double</span> <span class="n">H</span> <span class="o">=</span> <span class="mf">7200.0</span><span class="p">;</span> <span class="c1">// Scale height, m</span>
+
+  <span class="k">static</span> <span class="kt">double</span> <span class="n">xdot</span><span class="p">[</span><span class="n">S</span><span class="p">];</span> <span class="c1">// Declare the derivative vector</span>
+
+  <span class="n">xdot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span> <span class="c1">// hdot</span>
+  <span class="n">xdot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">rho0</span><span class="o">*</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">H</span><span class="p">)</span><span class="o">*</span><span class="n">pow</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mf">2.0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">B</span><span class="p">)</span> <span class="o">-</span> <span class="n">g</span><span class="o">*</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span> <span class="c1">// vdot</span>
+  <span class="n">xdot</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">re</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">g</span><span class="o">/</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span> <span class="c1">// fpa dot</span>
+
+  <span class="k">return</span> <span class="n">xdot</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rk4-function">
+<h2>2. RK4 Function<a class="headerlink" href="#rk4-function" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">//******************************************************************************</span>
+
+<span class="kt">double</span> <span class="o">**</span> <span class="nf">rk4</span><span class="p">(</span><span class="kt">double</span> <span class="n">a</span><span class="p">,</span> <span class="kt">double</span> <span class="n">b</span><span class="p">,</span> <span class="kt">double</span> <span class="n">alpha</span><span class="p">[]){</span>
+
+<span class="c1">//******************************************************************************</span>
+<span class="c1">//</span>
+<span class="c1">//  Author:</span>
+<span class="c1">//</span>
+<span class="c1">//    Kshitij Mall</span>
+<span class="c1">//</span>
+<span class="c1">//  Modified:</span>
+<span class="c1">//</span>
+<span class="c1">//    18 February 2019</span>
+<span class="c1">//</span>
+<span class="c1">//  Purpose:</span>
+<span class="c1">//</span>
+<span class="c1">//    rk4 is the function file to obtain the state vector at all input times.</span>
+<span class="c1">//    A 4th order Runge Kutta method is used in this file.</span>
+<span class="c1">//</span>
+<span class="c1">//  Inputs:</span>
+<span class="c1">//</span>
+<span class="c1">//    a: Initial time</span>
+<span class="c1">//          b: Final time</span>
+<span class="c1">//    alpha[]: Initial state vector</span>
+<span class="c1">//</span>
+<span class="c1">//  Output:</span>
+<span class="c1">//</span>
+<span class="c1">//    state: A matrix of the state outputs at different times</span>
+<span class="c1">//</span>
+<span class="c1">//******************************************************************************</span>
+  <span class="kt">double</span> <span class="o">**</span> <span class="n">state</span> <span class="o">=</span> <span class="n">new</span> <span class="kt">double</span><span class="o">*</span><span class="p">[</span><span class="n">N</span><span class="p">];</span> <span class="c1">// Create N pointers to the rows of state</span>
+
+  <span class="kt">double</span> <span class="n">h</span> <span class="o">=</span> <span class="kt">double</span><span class="p">((</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">)</span><span class="o">/</span><span class="n">N</span><span class="p">);</span> <span class="c1">// The step size</span>
+    <span class="c1">// Initialize useful variables for the Runge Kutta formula</span>
+  <span class="kt">double</span> <span class="o">*</span> <span class="n">k1</span><span class="p">,</span> <span class="o">*</span> <span class="n">k2</span><span class="p">,</span> <span class="o">*</span> <span class="n">k3</span><span class="p">,</span> <span class="o">*</span> <span class="n">k4</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">N</span><span class="p">],</span> <span class="n">k2inp</span><span class="p">[</span><span class="n">S</span><span class="p">],</span> <span class="n">k3inp</span><span class="p">[</span><span class="n">S</span><span class="p">],</span> <span class="n">k4inp</span><span class="p">[</span><span class="n">S</span><span class="p">];</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+       <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span> <span class="kt">double</span><span class="p">[</span><span class="n">N</span><span class="p">];</span> <span class="c1">// Insert columns of states for each time input</span>
+       <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+                             <span class="c1">// Initialize the time and state arrays</span>
+         <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">;</span>
+                             <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+         <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+                            <span class="p">}</span>
+       <span class="p">}</span>
+       <span class="k">else</span><span class="p">{</span>
+         <span class="c1">// Determine k1</span>
+         <span class="n">k1</span> <span class="o">=</span> <span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]);</span>
+
+         <span class="c1">// Determine k2</span>
+         <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+          <span class="n">k2inp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">k1</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+         <span class="p">}</span>
+         <span class="n">k2</span> <span class="o">=</span> <span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">k2inp</span><span class="p">);</span>
+
+         <span class="c1">// Determine k3</span>
+         <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+          <span class="n">k3inp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">k2</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+         <span class="p">}</span>
+         <span class="n">k3</span> <span class="o">=</span> <span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">k3inp</span><span class="p">);</span>
+
+         <span class="c1">// Determine k4</span>
+         <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+          <span class="n">k4inp</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>  <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">k3</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+         <span class="p">}</span>
+         <span class="n">k4</span> <span class="o">=</span> <span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="p">,</span> <span class="n">k4inp</span><span class="p">);</span>
+
+         <span class="c1">// Determine the new state from k1, k2, k3, k4, and the old state</span>
+         <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+           <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="o">*</span><span class="p">(</span><span class="n">k1</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">k2</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">k3</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">k4</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">/</span><span class="mf">6.0</span><span class="p">;</span>
+         <span class="p">}</span>
+
+                             <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span><span class="p">;</span> <span class="c1">// Determine the new time</span>
+       <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">state</span><span class="p">;</span> <span class="c1">// Return the state vector</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="printresult-function">
+<h2>3. printResult Function<a class="headerlink" href="#printresult-function" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">//******************************************************************************</span>
+
+<span class="kt">void</span> <span class="nf">printResult</span><span class="p">(</span><span class="kt">double</span> <span class="o">**</span> <span class="n">state</span><span class="p">){</span>
+
+<span class="c1">//******************************************************************************</span>
+<span class="c1">//</span>
+<span class="c1">//  Author:</span>
+<span class="c1">//</span>
+<span class="c1">//    Kshitij Mall</span>
+<span class="c1">//</span>
+<span class="c1">//  Modified:</span>
+<span class="c1">//</span>
+<span class="c1">//    18 February 2019</span>
+<span class="c1">//</span>
+<span class="c1">//  Purpose:</span>
+<span class="c1">//</span>
+<span class="c1">//    printResult is the function file to obtain the derivative vector at a given time.</span>
+<span class="c1">//</span>
+<span class="c1">//  Inputs:</span>
+<span class="c1">//</span>
+<span class="c1">//    state: State result vector obtained from rk4 function</span>
+<span class="c1">//</span>
+<span class="c1">//  Output:</span>
+<span class="c1">//</span>
+<span class="c1">//    Returns void</span>
+<span class="c1">//</span>
+<span class="c1">//******************************************************************************</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">S</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="c1">// Print all the state vector values at all input times</span>
+      <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;state[&quot;</span> <span class="o">&lt;&lt;</span><span class="n">i</span><span class="o">&lt;&lt;</span><span class="s">&quot;][&quot;</span> <span class="o">&lt;&lt;</span><span class="n">j</span> <span class="o">&lt;&lt;</span><span class="s">&quot;] = &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">state</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; &quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="main-file">
+<h2>4. Main File<a class="headerlink" href="#main-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+<span class="c1">// To use mathematical quantities like PI we need the following two lines</span>
+<span class="cp">#define _USE_MATH_DEFINES</span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;time.h&gt; // This header file is needed to calculate computation time</span><span class="cp"></span>
+
+<span class="n">using</span> <span class="n">namespace</span> <span class="n">std</span><span class="p">;</span> <span class="c1">// This helps to avoid writing std:: at several places</span>
+
+<span class="c1">// Define the constants used for the hypersonic problem</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span> <span class="c1">// Time steps</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">S</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span> <span class="c1">// Number of states</span>
+
+<span class="c1">// Declare the functions used inside main</span>
+<span class="kt">double</span> <span class="o">*</span> <span class="nf">eom</span><span class="p">(</span><span class="kt">double</span> <span class="n">t</span><span class="p">,</span> <span class="kt">double</span> <span class="n">x</span><span class="p">[]);</span>
+<span class="kt">double</span> <span class="o">**</span> <span class="nf">rk4</span><span class="p">(</span><span class="kt">double</span> <span class="n">a</span><span class="p">,</span> <span class="kt">double</span> <span class="n">b</span><span class="p">,</span> <span class="kt">double</span> <span class="n">alpha</span><span class="p">[]);</span>
+<span class="kt">void</span> <span class="nf">printResult</span><span class="p">(</span><span class="kt">double</span> <span class="o">**</span> <span class="n">result</span><span class="p">);</span>
+
+<span class="c1">//******************************************************************************</span>
+
+<span class="kt">int</span> <span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+
+<span class="c1">//******************************************************************************</span>
+<span class="c1">//</span>
+<span class="c1">//  Author:</span>
+<span class="c1">//</span>
+<span class="c1">//    Kshitij Mall</span>
+<span class="c1">//</span>
+<span class="c1">//  Modified:</span>
+<span class="c1">//</span>
+<span class="c1">//    24 February 2019</span>
+<span class="c1">//</span>
+<span class="c1">//  Purpose:</span>
+<span class="c1">//</span>
+<span class="c1">//    main is the main program for this project.</span>
+<span class="c1">//</span>
+<span class="c1">//  Inputs:</span>
+<span class="c1">//</span>
+<span class="c1">//    argc: Number of command line arguments</span>
+<span class="c1">//    argv: value of array of command line arguments</span>
+<span class="c1">//</span>
+<span class="c1">//  Output:</span>
+<span class="c1">//</span>
+<span class="c1">//    Returns 0</span>
+<span class="c1">//</span>
+<span class="c1">//  Licensing:</span>
+<span class="c1">//</span>
+<span class="c1">//    This code is distributed under the GNU LGPL license</span>
+<span class="c1">//</span>
+<span class="c1">//******************************************************************************</span>
+<span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;  C++ version</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">;</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">vatm</span> <span class="o">=</span> <span class="mf">11060.0</span><span class="p">;</span> <span class="c1">// Entry Velocity, m/s</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">hatm</span> <span class="o">=</span> <span class="mf">80000.0</span><span class="p">;</span> <span class="c1">// Entry Height, m</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">gamma0</span> <span class="o">=</span> <span class="o">-</span><span class="mf">50.0</span><span class="o">/</span><span class="mf">180.0</span><span class="o">*</span><span class="n">M_PI</span><span class="p">;</span> <span class="c1">// Initial flight path angle, rad</span>
+
+<span class="k">const</span> <span class="kt">double</span> <span class="n">t0</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span> <span class="c1">// Initial time</span>
+<span class="k">const</span> <span class="kt">double</span> <span class="n">tf</span> <span class="o">=</span> <span class="mf">212.2</span><span class="p">;</span> <span class="c1">// Final time</span>
+
+<span class="kt">double</span> <span class="n">init</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">hatm</span><span class="p">,</span><span class="n">vatm</span><span class="p">,</span><span class="n">gamma0</span><span class="p">};</span> <span class="c1">// Initial guess</span>
+
+<span class="c1">// Get starting timepoint</span>
+<span class="kt">clock_t</span> <span class="n">t</span><span class="p">;</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">clock</span><span class="p">();</span>
+
+<span class="c1">// Call the RK4 function to obtain the ODE solution</span>
+<span class="kt">double</span> <span class="o">**</span> <span class="n">result</span> <span class="o">=</span> <span class="n">rk4</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">tf</span><span class="p">,</span> <span class="n">init</span><span class="p">);</span>
+
+<span class="c1">// Get ending timepoint</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">;</span>
+
+<span class="c1">// Display the computation time</span>
+<span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">&quot;  Computation Time: &quot;</span> <span class="o">&lt;&lt;</span> <span class="n">t</span><span class="o">*</span><span class="mf">1.0</span><span class="o">/</span><span class="n">CLOCKS_PER_SEC</span> <span class="o">&lt;&lt;</span> <span class="s">&quot; seconds&quot;</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+
+<span class="c1">//printResult(result); // Print the state vector</span>
+<span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">RK4Test</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="python.html">Solution using Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cython.html">Solution using Cython</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Solution using C++</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="cython.html" title="previous chapter">Solution using Cython</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Kshitij Mall.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/_src_docs/cpp.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

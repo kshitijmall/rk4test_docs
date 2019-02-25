@@ -1,0 +1,248 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Solution using Python &#8212; RK4Test 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Solution using Cython" href="cython.html" />
+    <link rel="prev" title="RK4 Solution for a Hypersonics Initial Value Problem" href="../index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="solution-using-python">
+<h1>Solution using Python<a class="headerlink" href="#solution-using-python" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="eom-file">
+<h2>1. EOM File<a class="headerlink" href="#eom-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the necessary packages</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="k">def</span> <span class="nf">eom</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+<span class="c1">################################################################################</span>
+<span class="c1">## eom calculates the state derivative vectors at the given time and states</span>
+<span class="c1">#</span>
+<span class="c1">#  Author: Kshitij Mall</span>
+<span class="c1">#</span>
+<span class="c1">#  Modified: 18 February 2019</span>
+<span class="c1">#  Parameters:</span>
+<span class="c1">#</span>
+<span class="c1">#    Input: double t, the given time.</span>
+<span class="c1">#</span>
+<span class="c1">#           double x, the given state vector.</span>
+<span class="c1">#</span>
+<span class="c1">#    Output: double xdot: the state derivative vector</span>
+<span class="c1">#</span>
+<span class="c1">################################################################################</span>
+    <span class="c1"># Inputs to calculate the state derivatives</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="mf">9.80665</span>
+    <span class="n">re</span> <span class="o">=</span> <span class="mi">6378000</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="mi">157</span>
+    <span class="n">rho0</span> <span class="o">=</span> <span class="mf">1.225</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="mi">7200</span>
+    <span class="n">xdot</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>\
+           <span class="o">-</span><span class="n">rho0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">H</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">B</span><span class="p">)</span><span class="o">-</span><span class="n">g</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>\
+           <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">re</span><span class="o">+</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">g</span><span class="o">/</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span>
+    <span class="k">return</span> <span class="n">xdot</span> <span class="c1"># Calculate the state derivative vector</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rk4-file">
+<h2>2. RK4 File<a class="headerlink" href="#rk4-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the necessary packages</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">eom</span>
+<span class="k">def</span> <span class="nf">rk4</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
+<span class="c1">################################################################################</span>
+<span class="c1">## RK4 calculates the state values for each time step</span>
+<span class="c1">#</span>
+<span class="c1">#  Author: Kshitij Mall</span>
+<span class="c1">#</span>
+<span class="c1">#  Modified: 18 February 2019</span>
+<span class="c1">#  Parameters:</span>
+<span class="c1">#</span>
+<span class="c1">#    Input: double a, the initial time.</span>
+<span class="c1">#</span>
+<span class="c1">#           double b, the final time.</span>
+<span class="c1">#</span>
+<span class="c1">#           integer N, the time step.</span>
+<span class="c1">#</span>
+<span class="c1">#           integer M, the number of states.</span>
+<span class="c1">#</span>
+<span class="c1">#           double alpha, the initial state vector.</span>
+<span class="c1">#</span>
+<span class="c1">#    Output: double t, w: the fourth-order Runge-Kutta solution</span>
+<span class="c1">#</span>
+<span class="c1">################################################################################</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">b</span><span class="o">-</span><span class="n">a</span><span class="p">))</span><span class="o">/</span><span class="n">N</span> <span class="c1"># The step size</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span> <span class="p">(</span> <span class="n">N</span> <span class="p">)</span> <span class="c1"># Initialize the time vector with zero values</span>
+    <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span> <span class="c1"># Initial time</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span> <span class="p">(</span> <span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span> <span class="p">)</span> <span class="c1"># Initialize the state matrix with zero values</span>
+    <span class="n">w</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span> <span class="c1"># Insert initial value input as the first row of the state</span>
+    <span class="c1"># Obtain the states for the given times using rk4</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="c1"># Calculate k1, k2, k3, and k4 for each time inputs</span>
+        <span class="n">k1</span> <span class="o">=</span> <span class="n">h</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">*</span><span class="n">eom</span><span class="o">.</span><span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">k2</span> <span class="o">=</span> <span class="n">h</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">*</span><span class="n">eom</span><span class="o">.</span><span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">k1</span><span class="p">)</span>
+        <span class="n">k3</span> <span class="o">=</span> <span class="n">h</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">*</span><span class="n">eom</span><span class="o">.</span><span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="mf">0.5</span><span class="o">*</span><span class="n">k2</span><span class="p">)</span>
+        <span class="n">k4</span> <span class="o">=</span> <span class="n">h</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span> <span class="p">(</span><span class="n">M</span><span class="p">)</span><span class="o">*</span><span class="n">eom</span><span class="o">.</span><span class="n">eom</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="n">k3</span><span class="p">)</span>\
+        <span class="c1"># Update the state matrix with k1, k2, k3, k4, and old state value</span>
+        <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">k1</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">k2</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">k3</span> <span class="o">+</span> <span class="n">k4</span><span class="p">)</span><span class="o">/</span><span class="mf">6.0</span>
+        <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">h</span> <span class="c1"># Update the time values</span>
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">w</span> <span class="c1"># Return the time and state vectors</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="main-input-file">
+<h2>3. Main Input File<a class="headerlink" href="#main-input-file" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import the necessary packages</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">rk4</span>
+<span class="k">def</span> <span class="nf">input</span><span class="p">():</span>
+<span class="c1">################################################################################</span>
+<span class="c1"># main</span>
+<span class="c1">#</span>
+<span class="c1">#  Author: Kshitij Mall</span>
+<span class="c1">#</span>
+<span class="c1">#  Modified: 24 February 2019</span>
+<span class="c1">#  Parameters:</span>
+<span class="c1">#</span>
+<span class="c1">#    Input: None</span>
+<span class="c1">#</span>
+<span class="c1">#    Output: real [t,y], the fourth-order Runge-Kutta solution</span>
+<span class="c1">#</span>
+<span class="c1">################################################################################</span>
+    <span class="k">print</span> <span class="p">(</span> <span class="s1">&#39;&#39;</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="p">(</span> <span class="s1">&#39;  Python version: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span> <span class="n">platform</span><span class="o">.</span><span class="n">python_version</span> <span class="p">(</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="p">(</span> <span class="s1">&#39;  Test the RK4 Function.&#39;</span> <span class="p">)</span>
+    <span class="k">print</span> <span class="p">(</span> <span class="s1">&#39;&#39;</span> <span class="p">)</span>
+    <span class="c1"># Write the necessary inputs</span>
+    <span class="n">vatm</span> <span class="o">=</span> <span class="mi">11060</span> <span class="c1"># Entry Velocity, m/s</span>
+    <span class="n">hatm</span> <span class="o">=</span> <span class="mi">80000</span> <span class="c1"># Entry Height, m</span>
+    <span class="n">gamma0</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span><span class="o">/</span><span class="mi">180</span><span class="o">*</span><span class="n">pi</span> <span class="c1"># Initial flight path angle, rad</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># Initial time</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="mf">212.2</span> <span class="c1"># Final time</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1"># Time steps</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="mi">3</span> <span class="c1"># Number of states</span>
+    <span class="n">init</span> <span class="o">=</span> <span class="p">[</span><span class="n">hatm</span><span class="p">,</span><span class="n">vatm</span><span class="p">,</span><span class="n">gamma0</span><span class="p">]</span> <span class="c1"># Initial state vector</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="c1"># Start the timer</span>
+        <span class="c1"># Obtain the states for the given times using rk4</span>
+        <span class="p">[</span><span class="n">t</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">rk4</span><span class="o">.</span><span class="n">rk4</span><span class="p">(</span><span class="n">t0</span><span class="p">,</span> <span class="n">tf</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">init</span><span class="p">)</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">tic</span> <span class="c1"># Calculate the elapsed time</span>
+        <span class="c1"># Print the computation time</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Time taken by pure python code:&#39;</span><span class="p">,</span><span class="n">elapsed</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># In case of an unexpected error catch and raise an exception</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">raise</span>
+
+<span class="sd">&quot;&quot;&quot;The following if condition allows this python module to be imported by other modules</span>
+<span class="sd">without calling main function. If desired, this main function can be called by</span>
+<span class="sd">the other module that imports this module.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="k">if</span> <span class="p">(</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span> <span class="p">):</span>
+   <span class="nb">input</span> <span class="p">(</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">RK4Test</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Solution using Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cython.html">Solution using Cython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cpp.html">Solution using C++</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="../index.html" title="previous chapter">RK4 Solution for a Hypersonics Initial Value Problem</a></li>
+      <li>Next: <a href="cython.html" title="next chapter">Solution using Cython</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Kshitij Mall.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/_src_docs/python.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
